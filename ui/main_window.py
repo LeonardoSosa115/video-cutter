@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 
 from video_processor import cut_video
+from ui.video_player import VideoPlayer
 
 
 class MainWindow(QMainWindow):
@@ -60,18 +61,13 @@ class MainWindow(QMainWindow):
         video_frame.setObjectName("videoFrame")
 
         video_layout = QVBoxLayout()
-        video_layout.setContentsMargins(20, 20, 20, 20)
+        video_layout.setContentsMargins(0, 0, 0, 0)
 
         video_frame.setLayout(video_layout)
 
-        self.video_label = QLabel(
-            "Ningún video seleccionado\n\n"
-            "Selecciona un video para comenzar"
-        )
-        self.video_label.setObjectName("videoPlaceholder")
-        self.video_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.video_player = VideoPlayer()
 
-        video_layout.addWidget(self.video_label)
+        video_layout.addWidget(self.video_player)
 
         main_layout.addWidget(video_frame, 1)
 
@@ -237,9 +233,7 @@ class MainWindow(QMainWindow):
         if file_path:
             self.video_path = file_path
 
-            self.video_label.setText(
-                f"Video seleccionado:\n\n{file_path}"
-            )
+            self.video_player.load_video(file_path)
 
             self.status_label.setText("Video seleccionado")
 
