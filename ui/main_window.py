@@ -30,7 +30,6 @@ class MainWindow(QMainWindow):
         self.apply_styles()
 
     def setup_ui(self):
-        # Widget principal
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
 
@@ -66,6 +65,14 @@ class MainWindow(QMainWindow):
         video_frame.setLayout(video_layout)
 
         self.video_player = VideoPlayer()
+
+        self.video_player.start_position_changed.connect(
+            self.set_start_time
+        )
+
+        self.video_player.end_position_changed.connect(
+            self.set_end_time
+        )
 
         video_layout.addWidget(self.video_player)
 
@@ -305,3 +312,29 @@ class MainWindow(QMainWindow):
                 "Error",
                 f"No se pudo recortar el video.\n\n{error}"
             )
+
+    def set_start_time(self, milliseconds):
+        self.start_input.setText(
+            self.format_time(milliseconds)
+        )
+
+
+    def set_end_time(self, milliseconds):
+        self.end_input.setText(
+            self.format_time(milliseconds)
+        )
+
+
+    def format_time(self, milliseconds):
+        seconds = milliseconds // 1000
+
+        minutes = seconds // 60
+        seconds = seconds % 60
+
+        hours = minutes // 60
+        minutes = minutes % 60
+
+        if hours > 0:
+            return f"{hours:02}:{minutes:02}:{seconds:02}"
+
+        return f"{minutes:02}:{seconds:02}"
