@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QPushButton,
     QLabel,
+    QSizePolicy
 )
 
 from ui.timeline import Timeline
@@ -28,9 +29,19 @@ class VideoPlayer(QWidget):
         )
 
         self.video_widget = QVideoWidget()
+
+        self.video_widget.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Expanding
+        )
+
+        self.video_widget.setMinimumHeight(180)
+
         self.player.setVideoOutput(
             self.video_widget
         )
+
+        self.setMinimumHeight(300)
 
         self.timeline = Timeline()
 
