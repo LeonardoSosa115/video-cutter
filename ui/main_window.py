@@ -100,7 +100,6 @@ class MainWindow(QMainWindow):
 
         time_frame.setLayout(time_layout)
 
-        # Inicio
         start_container = QVBoxLayout()
 
         start_label = QLabel("Inicio")
