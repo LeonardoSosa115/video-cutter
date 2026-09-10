@@ -20,7 +20,7 @@ class Timeline(QWidget):
 
         self.dragging = None
 
-        self.setMinimumHeight(50)
+        self.setMinimumHeight(75)
         self.setMouseTracking(True)
 
     # --------------------------------------------------
@@ -32,6 +32,7 @@ class Timeline(QWidget):
 
         self.start_position = 0
         self.end_position = self.duration
+        self.position = 0
 
         self.update()
 
@@ -59,7 +60,9 @@ class Timeline(QWidget):
 
         self.start_position = position
 
-        self.start_position_changed.emit(position)
+        self.start_position_changed.emit(
+            position
+        )
 
         self.update()
 
@@ -79,7 +82,9 @@ class Timeline(QWidget):
 
         self.end_position = position
 
-        self.end_position_changed.emit(position)
+        self.end_position_changed.emit(
+            position
+        )
 
         self.update()
 
@@ -111,6 +116,29 @@ class Timeline(QWidget):
         )
 
     # --------------------------------------------------
+    # TIME FORMAT
+    # --------------------------------------------------
+
+    def format_time(self, milliseconds):
+        total_seconds = milliseconds // 1000
+
+        hours = total_seconds // 3600
+        minutes = (total_seconds % 3600) // 60
+        seconds = total_seconds % 60
+
+        if hours > 0:
+            return (
+                f"{hours:02}:"
+                f"{minutes:02}:"
+                f"{seconds:02}"
+            )
+
+        return (
+            f"{minutes:02}:"
+            f"{seconds:02}"
+        )
+
+    # --------------------------------------------------
     # PAINTED
     # --------------------------------------------------
 
@@ -124,15 +152,21 @@ class Timeline(QWidget):
         width = self.width()
         height = self.height()
 
-        track_y = height // 2
-        track_height = 8
+        track_y = 32
+        track_height = 10
+
+        # --------------------------------------------------
+        # FULL TRACK 
+        # --------------------------------------------------
 
         painter.setPen(Qt.PenStyle.NoPen)
 
         painter.setBrush(
-            QBrush(self.palette().color(
-                self.palette().ColorRole.Mid
-            ))
+            QBrush(
+                self.palette().color(
+                    self.palette().ColorRole.Mid
+                )
+            )
         )
 
         painter.drawRoundedRect(
@@ -140,9 +174,13 @@ class Timeline(QWidget):
             track_y - track_height // 2,
             width,
             track_height,
-            4,
-            4
+            5,
+            5
         )
+
+        # --------------------------------------------------
+        # LEFT DELETED ZONE
+        # --------------------------------------------------
 
         start_x = self.position_to_x(
             self.start_position
@@ -151,6 +189,26 @@ class Timeline(QWidget):
         end_x = self.position_to_x(
             self.end_position
         )
+
+        painter.setBrush(
+            QBrush(
+                self.palette().color(
+                    self.palette().ColorRole.Dark
+                )
+            )
+        )
+
+        if start_x > 0:
+            painter.drawRect(
+                0,
+                track_y - track_height // 2,
+                start_x,
+                track_height
+            )
+
+        # --------------------------------------------------
+        # SELECTED ZONE
+        # --------------------------------------------------
 
         painter.setBrush(
             QBrush(
@@ -165,9 +223,33 @@ class Timeline(QWidget):
             track_y - track_height // 2,
             max(1, end_x - start_x),
             track_height,
-            4,
-            4
+            5,
+            5
         )
+
+        # --------------------------------------------------
+        # RIGHT DELETED ZONE
+        # --------------------------------------------------
+
+        if end_x < width:
+            painter.setBrush(
+                QBrush(
+                    self.palette().color(
+                        self.palette().ColorRole.Dark
+                    )
+                )
+            )
+
+            painter.drawRect(
+                end_x,
+                track_y - track_height // 2,
+                width - end_x,
+                track_height
+            )
+
+        # --------------------------------------------------
+        # PLAYHEAD
+        # --------------------------------------------------
 
         position_x = self.position_to_x(
             self.position
@@ -184,10 +266,14 @@ class Timeline(QWidget):
 
         painter.drawLine(
             position_x,
-            5,
+            8,
             position_x,
-            height - 5
+            52
         )
+
+        # --------------------------------------------------
+        # HANDLES
+        # --------------------------------------------------
 
         self.draw_handle(
             painter,
@@ -199,6 +285,38 @@ class Timeline(QWidget):
             painter,
             end_x,
             track_y
+        )
+
+        # --------------------------------------------------
+        # TIMES
+        # --------------------------------------------------
+
+        painter.setPen(
+            QPen(
+                self.palette().color(
+                    self.palette().ColorRole.Text
+                )
+            )
+        )
+
+        start_text = self.format_time(
+            self.start_position
+        )
+
+        end_text = self.format_time(
+            self.end_position
+        )
+
+        painter.drawText(
+            start_x - 20,
+            68,
+            start_text
+        )
+
+        painter.drawText(
+            end_x - 20,
+            68,
+            end_text
         )
 
     def draw_handle(self, painter, x, y):
@@ -214,8 +332,8 @@ class Timeline(QWidget):
 
         painter.drawEllipse(
             QPoint(x, y),
-            7,
-            7
+            8,
+            8
         )
 
     # --------------------------------------------------
@@ -249,7 +367,10 @@ class Timeline(QWidget):
         position = self.x_to_position(x)
 
         self.position = position
-        self.position_changed.emit(position)
+
+        self.position_changed.emit(
+            position
+        )
 
         self.update()
 
@@ -262,10 +383,14 @@ class Timeline(QWidget):
         position = self.x_to_position(x)
 
         if self.dragging == "start":
-            self.set_start_position(position)
+            self.set_start_position(
+                position
+            )
 
         elif self.dragging == "end":
-            self.set_end_position(position)
+            self.set_end_position(
+                position
+            )
 
         elif self.dragging == "position":
             self.position = position
