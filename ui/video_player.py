@@ -139,6 +139,10 @@ class VideoPlayer(QWidget):
             self.duration_changed
         )
 
+        self.player.playbackStateChanged.connect(
+            self.playback_state_changed
+        )
+
     # --------------------------------------------------
     # VIDEO
     # --------------------------------------------------
@@ -160,11 +164,24 @@ class VideoPlayer(QWidget):
             == QMediaPlayer.PlaybackState.PlayingState
         ):
             self.player.pause()
-            self.play_button.setText("▶")
+            return
 
-        else:
-            self.player.play()
+        start = self.timeline.start_position
+        end = self.timeline.end_position
+        position = self.player.position()
+
+        if position < start or position >= end:
+            self.player.setPosition(start)
+
+        self.player.play()
+
+    def playback_state_changed(self, state):
+        if (
+            state == QMediaPlayer.PlaybackState.PlayingState
+        ):
             self.play_button.setText("⏸")
+        else:
+            self.play_button.setText("▶")
 
     def set_position(self, position):
         self.player.setPosition(
@@ -177,6 +194,17 @@ class VideoPlayer(QWidget):
         )
 
         self.update_time_label()
+
+        if (
+            self.player.playbackState()
+            == QMediaPlayer.PlaybackState.PlayingState
+            and self.timeline.end_position > 0
+            and position >= self.timeline.end_position
+        ):
+            self.player.pause()
+            self.player.setPosition(
+                self.timeline.end_position
+            )
 
     def duration_changed(self, duration):
         self.timeline.set_duration(
@@ -194,10 +222,22 @@ class VideoPlayer(QWidget):
             position
         )
 
+        if self.player.position() < position:
+            self.player.setPosition(position)
+
     def handle_end_changed(self, position):
         self.end_position_changed.emit(
             position
         )
+
+        if self.player.position() >= position:
+            if (
+                self.player.playbackState()
+                == QMediaPlayer.PlaybackState.PlayingState
+            ):
+                self.player.pause()
+
+            self.player.setPosition(position)
 
     # --------------------------------------------------
     # MARKERS
