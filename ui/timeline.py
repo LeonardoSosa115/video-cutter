@@ -37,10 +37,17 @@ class Timeline(QWidget):
         self.update()
 
     def set_position(self, position):
-        self.position = max(
-            0,
-            min(position, self.duration)
+        if self.duration <= 0:
+            return
+
+        position = max(
+            self.start_position,
+            min(position, self.end_position)
         )
+
+        self.position = position
+
+        self.update()
 
         self.update()
 
@@ -366,6 +373,11 @@ class Timeline(QWidget):
 
         position = self.x_to_position(x)
 
+        position = max(
+            self.start_position,
+            min(position, self.end_position)
+        )
+
         self.position = position
 
         self.position_changed.emit(
@@ -393,6 +405,11 @@ class Timeline(QWidget):
             )
 
         elif self.dragging == "position":
+            position = max(
+                self.start_position,
+                min(position, self.end_position)
+            )
+
             self.position = position
 
             self.position_changed.emit(
