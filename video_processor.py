@@ -5,8 +5,8 @@ def cut_video(input_path, output_path, start, end):
     command = [
         "ffmpeg",
         "-i", input_path,
-        "-ss", start,
-        "-to", end,
+        "-ss", str(start),
+        "-to", str(end),
         "-c", "copy",
         output_path
     ]
