@@ -43,10 +43,20 @@ class VideoPlayer(QWidget):
 
         self.setMinimumHeight(300)
 
+        self.was_playing_before_drag = False
+
         self.timeline = Timeline()
 
         self.timeline.position_changed.connect(
             self.set_position
+        )
+
+        self.timeline.drag_started.connect(
+            self.timeline_drag_started
+        )
+
+        self.timeline.drag_finished.connect(
+            self.timeline_drag_finished
         )
 
         self.timeline.start_position_changed.connect(
@@ -213,6 +223,20 @@ class VideoPlayer(QWidget):
 
         self.update_time_label()
 
+    def timeline_drag_started(self):
+        self.was_playing_before_drag = (
+            self.player.playbackState()
+            == QMediaPlayer.PlaybackState.PlayingState
+        )
+
+        if self.was_playing_before_drag:
+            self.player.pause()
+
+    def timeline_drag_finished(self):
+        if self.was_playing_before_drag:
+            self.player.play()
+
+        self.was_playing_before_drag = False
     # --------------------------------------------------
     # TIMELINE
     # --------------------------------------------------

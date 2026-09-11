@@ -9,6 +9,9 @@ class Timeline(QWidget):
     start_position_changed = Signal(int)
     end_position_changed = Signal(int)
 
+    drag_started = Signal()
+    drag_finished = Signal()
+
     def __init__(self):
         super().__init__()
 
@@ -371,6 +374,8 @@ class Timeline(QWidget):
 
         self.dragging = "position"
 
+        self.drag_started.emit()
+
         position = self.x_to_position(x)
 
         position = max(
@@ -420,4 +425,8 @@ class Timeline(QWidget):
 
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
+
+            if self.dragging == "position":
+                self.drag_finished.emit()
+
             self.dragging = None
