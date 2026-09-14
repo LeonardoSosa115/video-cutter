@@ -1,4 +1,3 @@
-import subprocess
 from PySide6.QtWidgets import (
     QMainWindow,
     QWidget,
@@ -11,10 +10,11 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QFrame,
 )
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QThread
 
 from video_processor import cut_video
 from ui.video_player import VideoPlayer
+from ui.cut_worker import CutWorker
 
 
 class MainWindow(QMainWindow):
@@ -29,6 +29,9 @@ class MainWindow(QMainWindow):
 
         self.setup_ui()
         self.apply_styles()
+
+        self.cut_thread = None
+        self.cut_worker = None
 
     def setup_ui(self):
         central_widget = QWidget()
@@ -280,7 +283,6 @@ class MainWindow(QMainWindow):
                 "El rango seleccionado no es válido."
             )
             return
-
         output_path, _ = QFileDialog.getSaveFileName(
             self,
             "Guardar video recortado",
@@ -294,124 +296,84 @@ class MainWindow(QMainWindow):
         start_seconds = start / 1000
         end_seconds = end / 1000
 
-        self.status_label.setText(
-            "Recortando..."
-        )
-
-        try:
-            cut_video(
-                self.video_path,
-                output_path,
-                start_seconds,
-                end_seconds
-            )
-
-            self.status_label.setText(
-                "Video recortado correctamente"
-            )
-
-            QMessageBox.information(
-                self,
-                "Listo",
-                "El video fue recortado correctamente."
-            )
-
-        except FileNotFoundError:
-            self.status_label.setText(
-                "FFmpeg no encontrado"
-            )
-
-            QMessageBox.critical(
-                self,
-                "Error",
-                "No se encontró FFmpeg.\n\n"
-                "Comprueba que esté instalado "
-                "y agregado al PATH."
-            )
-
-        except subprocess.CalledProcessError as error:
-            self.status_label.setText(
-                "Error al recortar"
-            )
-
-            QMessageBox.critical(
-                self,
-                "Error",
-                "FFmpeg no pudo procesar el video.\n\n"
-                f"{error.stderr}"
-            )
-
-        except Exception as error:
-            self.status_label.setText(
-                "Error al recortar"
-            )
-
-            QMessageBox.critical(
-                self,
-                "Error",
-                f"No se pudo recortar el video.\n\n"
-                f"{error}"
-            )
-
-        start = self.start_input.text().strip()
-        end = self.end_input.text().strip()
-
-        if not start or not end:
-            QMessageBox.warning(
-                self,
-                "Error",
-                "Introduce el tiempo de inicio y final."
-            )
-            return
-
-        output_path, _ = QFileDialog.getSaveFileName(
-            self,
-            "Guardar video recortado",
-            "",
-            "MP4 (*.mp4);;Todos los archivos (*)"
-        )
-
-        if not output_path:
-            return
+        self.cut_button.setEnabled(False)
 
         self.status_label.setText("Recortando...")
 
-        try:
-            cut_video(
-                self.video_path,
-                output_path,
-                start,
-                end
-            )
+        self.cut_thread = QThread()
+        self.cut_worker = CutWorker(
+            self.video_path,
+            output_path,
+            start_seconds,
+            end_seconds
+        )
 
-            self.status_label.setText(
-                "Video recortado correctamente"
-            )
+        self.cut_worker.moveToThread(self.cut_thread)
 
-            QMessageBox.information(
-                self,
-                "Listo",
-                "El video fue recortado correctamente."
-            )
+        self.cut_thread.started.connect(
+            self.cut_worker.run
+        )
 
-        except FileNotFoundError:
-            self.status_label.setText("FFmpeg no encontrado")
+        self.cut_worker.finished.connect(
+            self.cut_finished
+        )
 
-            QMessageBox.critical(
-                self,
-                "Error",
-                "No se encontró FFmpeg.\n\n"
-                "Comprueba que esté instalado y agregado al PATH."
-            )
+        self.cut_worker.error.connect(
+            self.cut_error
+        )
 
-        except Exception as error:
-            self.status_label.setText("Error al recortar")
+        self.cut_worker.finished.connect(
+            self.cut_thread.quit
+        )
 
-            QMessageBox.critical(
-                self,
-                "Error",
-                f"No se pudo recortar el video.\n\n{error}"
-            )
+        self.cut_worker.error.connect(
+            self.cut_thread.quit
+        )
+
+        self.cut_thread.finished.connect(
+            self.cut_worker.deleteLater
+        )
+
+        self.cut_thread.finished.connect(
+            self.cut_thread.deleteLater
+        )
+
+        self.cut_thread.start()
+
+        start = self.start_input.text().strip()
+
+    def cut_finished(self):
+        self.cut_button.setEnabled(True)
+
+        self.status_label.setText(
+            "Video recortado correctamente"
+        )
+
+        QMessageBox.information(
+            self,
+            "Listo",
+            "El video fue recortado correctamente."
+        )
+
+        self.cut_worker = None
+        self.cut_thread = None
+
+    def cut_error(self, message):
+        self.cut_button.setEnabled(True)
+
+        self.status_label.setText(
+            "Error al recortar"
+        )
+
+        QMessageBox.critical(
+            self,
+            "Error",
+            f"No se pudo recortar el video.\n\n"
+            f"{message}"
+        )
+
+        self.cut_worker = None
+        self.cut_thread = None
 
     def set_start_time(self, milliseconds):
         self.start_input.setText(
