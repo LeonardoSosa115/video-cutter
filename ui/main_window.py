@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QMessageBox,
     QFrame,
+    QProgressBar
 )
 from PySide6.QtCore import Qt, QThread
 
@@ -131,6 +132,13 @@ class MainWindow(QMainWindow):
         time_layout.addLayout(end_container)
 
         main_layout.addWidget(time_frame)
+
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setRange(0, 100)
+        self.progress_bar.setValue(0)
+        self.progress_bar.setVisible(False)
+
+        main_layout.addWidget(self.progress_bar)
 
         # =========================
         # FOOTER
@@ -298,14 +306,22 @@ class MainWindow(QMainWindow):
 
         self.cut_button.setEnabled(False)
 
+        self.progress_bar.setValue(0)
+        self.progress_bar.setVisible(True)  
+
         self.status_label.setText("Recortando...")
 
         self.cut_thread = QThread()
+
         self.cut_worker = CutWorker(
             self.video_path,
             output_path,
             start_seconds,
             end_seconds
+        )
+
+        self.cut_worker.progress.connect(
+            self.update_progress
         )
 
         self.cut_worker.moveToThread(self.cut_thread)
@@ -343,7 +359,12 @@ class MainWindow(QMainWindow):
         start = self.start_input.text().strip()
 
     def cut_finished(self):
+        print("MAIN WINDOW: CUT FINISHED")
+
         self.cut_button.setEnabled(True)
+
+        self.progress_bar.setValue(100)
+        self.progress_bar.setVisible(False)
 
         self.status_label.setText(
             "Video recortado correctamente"
@@ -359,7 +380,11 @@ class MainWindow(QMainWindow):
         self.cut_thread = None
 
     def cut_error(self, message):
+        print("MAIN WINDOW: CUT ERROR")
+
         self.cut_button.setEnabled(True)
+
+        self.progress_bar.setVisible(False)
 
         self.status_label.setText(
             "Error al recortar"
@@ -374,6 +399,13 @@ class MainWindow(QMainWindow):
 
         self.cut_worker = None
         self.cut_thread = None
+
+    def update_progress(self, value):
+        self.progress_bar.setValue(value)
+
+        self.status_label.setText(
+            f"Recortando... {value}%"
+        )
 
     def set_start_time(self, milliseconds):
         self.start_input.setText(

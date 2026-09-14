@@ -5,6 +5,7 @@ from video_processor import cut_video
 
 class CutWorker(QObject):
 
+    progress = Signal(int)
     finished = Signal()
     error = Signal(str)
 
@@ -23,16 +24,24 @@ class CutWorker(QObject):
                 self.input_path,
                 self.output_path,
                 self.start,
-                self.end
+                self.end,
+                self.progress.emit
             )
+
+            print("WORKER: FFmpeg terminó")
 
             self.finished.emit()
 
         except FileNotFoundError:
+            print("WORKER: FFmpeg no encontrado")
+
             self.error.emit(
-                "No se encontró FFmpeg. Comprueba que esté instalado "
+                "No se encontró FFmpeg. "
+                "Comprueba que esté instalado "
                 "y agregado al PATH."
             )
 
         except Exception as error:
+            print("WORKER ERROR:", error)
+
             self.error.emit(str(error))
