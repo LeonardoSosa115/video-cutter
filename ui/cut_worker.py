@@ -9,13 +9,21 @@ class CutWorker(QObject):
     finished = Signal()
     error = Signal(str)
 
-    def __init__(self, input_path, output_path, start, end):
+    def __init__(
+        self,
+        input_path,
+        output_path,
+        start,
+        end,
+        mode="fast"
+    ):
         super().__init__()
 
         self.input_path = input_path
         self.output_path = output_path
         self.start = start
         self.end = end
+        self.mode = mode
 
     @Slot()
     def run(self):
@@ -25,6 +33,7 @@ class CutWorker(QObject):
                 self.output_path,
                 self.start,
                 self.end,
+                self.mode,
                 self.progress.emit
             )
 

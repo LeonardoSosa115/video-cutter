@@ -317,7 +317,8 @@ class MainWindow(QMainWindow):
             self.video_path,
             output_path,
             start_seconds,
-            end_seconds
+            end_seconds,
+            "precise"
         )
 
         self.cut_worker.progress.connect(
