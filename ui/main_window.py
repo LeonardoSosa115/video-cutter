@@ -9,7 +9,8 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QMessageBox,
     QFrame,
-    QProgressBar
+    QProgressBar,
+    QComboBox
 )
 from PySide6.QtCore import Qt, QThread
 
@@ -116,6 +117,7 @@ class MainWindow(QMainWindow):
         start_container.addWidget(start_label)
         start_container.addWidget(self.start_input)
 
+
         # Final
         end_container = QVBoxLayout()
 
@@ -125,11 +127,38 @@ class MainWindow(QMainWindow):
         self.end_input = QLineEdit()
         self.end_input.setPlaceholderText("00:00:00")
 
+
+        # Método de recorte
+        self.mode_combo = QComboBox()
+
+        self.mode_combo.addItem(
+            "Rápido",
+            "fast"
+        )
+
+        self.mode_combo.addItem(
+            "Preciso",
+            "precise"
+        )
+
+        self.mode_combo.setCurrentIndex(0)
+
+
+        mode_container = QVBoxLayout()
+
+        mode_label = QLabel("Método")
+        mode_label.setObjectName("inputLabel")
+
+        mode_container.addWidget(mode_label)
+        mode_container.addWidget(self.mode_combo)
+
+
         end_container.addWidget(end_label)
         end_container.addWidget(self.end_input)
 
         time_layout.addLayout(start_container)
         time_layout.addLayout(end_container)
+        time_layout.addLayout(mode_container)
 
         main_layout.addWidget(time_frame)
 
@@ -313,12 +342,14 @@ class MainWindow(QMainWindow):
 
         self.cut_thread = QThread()
 
+        mode = self.mode_combo.currentData()
+
         self.cut_worker = CutWorker(
             self.video_path,
             output_path,
             start_seconds,
             end_seconds,
-            "precise"
+            mode
         )
 
         self.cut_worker.progress.connect(
