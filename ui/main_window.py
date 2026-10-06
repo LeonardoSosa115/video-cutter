@@ -141,6 +141,18 @@ class MainWindow(QMainWindow):
             "precise"
         )
 
+        self.mode_combo.setItemData(
+            0,
+            "Recorta sin recodificar. Muy rápido.",
+            Qt.ItemDataRole.ToolTipRole
+        )
+
+        self.mode_combo.setItemData(
+            1,
+            "Recodifica para conseguir un corte más preciso.",
+            Qt.ItemDataRole.ToolTipRole
+        )
+
         self.mode_combo.setCurrentIndex(0)
 
 
